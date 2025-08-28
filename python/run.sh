@@ -12,7 +12,7 @@ fi
 source venv/bin/activate
 
 # Install requirements
-pip install -r requirements.txt
+pip3 install -r requirements.txt
 
 # Start the server
 export FLASK_ENV=development

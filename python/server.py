@@ -1,21 +1,29 @@
 """
-Global Payments SDK Template - Python Flask
+Card Payment Processing Server
 
-This Flask application provides a starting template for Global Payments SDK integration.
-Customize the endpoints and logic below for your specific use case.
+This Flask application demonstrates card payment processing using the Global Payments SDK.
+It provides endpoints for configuration and payment processing, handling tokenized card data
+to ensure secure payment processing.
+
+The server provides two main endpoints:
+- /config: Returns the public API key for client-side tokenization
+- /process-payment: Processes card payments using tokenized data
+
+Author: Global Payments
+License: MIT
 """
 
 import os
 import re
+import uuid
+from datetime import datetime, date
 from flask import Flask, request, jsonify
 from dotenv import load_dotenv
 from globalpayments.api import PorticoConfig, ServicesContainer
 from globalpayments.api.payment_methods import CreditCardData
-from globalpayments.api.entities import Address
+from globalpayments.api.entities import Address, Customer
+from globalpayments.api.entities.enums import ScheduleFrequency
 from globalpayments.api.entities.exceptions import ApiException
-
-# Load environment variables
-load_dotenv()
 
 # Initialize application
 app = Flask(__name__, static_folder='.')
@@ -23,13 +31,16 @@ app = Flask(__name__, static_folder='.')
 def configure_sdk():
     """
     Configure the Global Payments SDK with necessary credentials and settings.
-    Customize these settings for your environment.
+    This must be called before processing any payments.
     """
     config = PorticoConfig()
+    # Set secret API key for server-side operations
     config.secret_api_key = os.getenv('SECRET_API_KEY')
-    config.service_url = 'https://cert.api2.heartlandportico.com'  # Use production URL for live transactions
-    config.developer_id = '000000'  # Your developer ID
-    config.version_number = '0000'  # Your version number
+    # Set API endpoint URL - using certification environment
+    config.service_url = 'https://cert.api2.heartlandportico.com'
+    # Developer identification used by Global Payments
+    config.developer_id = '000000'
+    config.version_number = '0000'
     
     ServicesContainer.configure(config)
 
@@ -38,111 +49,178 @@ configure_sdk()
 
 def sanitize_postal_code(postal_code: str) -> str:
     """
-    Utility function to sanitize postal code.
-    Customize validation logic as needed for your use case.
+    Sanitize postal code input by removing invalid characters.
+    
+    Args:
+        postal_code (str): The postal code to sanitize.
+            Can be a US format (12345 or 12345-6789) or international format.
+    
+    Returns:
+        str: The sanitized postal code, containing only alphanumeric characters
+            and hyphens, limited to 10 characters.
     """
     sanitized = re.sub(r'[^a-zA-Z0-9-]', '', postal_code or '')
     return sanitized[:10]
 
+def generate_uuid_v4() -> str:
+    """
+    Generate a UUID v4 formatted string.
+    
+    Returns:
+        str: A UUID v4 formatted string.
+    """
+    return str(uuid.uuid4())
+
+def generate_customer_id() -> str:
+    """
+    Generate a unique customer ID using UUID v4 format.
+    
+    Returns:
+        str: A UUID v4 formatted string for customer identification.
+    """
+    return generate_uuid_v4()
+
+def generate_schedule_id() -> str:
+    """
+    Generate a unique schedule ID using UUID v4 format.
+    
+    Returns:
+        str: A UUID v4 formatted string for schedule identification.
+    """
+    return generate_uuid_v4()
+
+def generate_payment_method_id() -> str:
+    """
+    Generate a unique payment method ID using UUID v4 format.
+    
+    Returns:
+        str: A UUID v4 formatted string for payment method identification.
+    """
+    return generate_uuid_v4()
+
 @app.route('/')
 def index():
-    """Serve the main HTML page."""
+    """Serve the main payment form HTML page."""
     return app.send_static_file('index.html')
 
 @app.route('/config')
 def get_config():
     """
-    Config endpoint - provides public API key for client-side use.
-    Customize response data as needed.
+    Provide the public API key for client-side tokenization.
+    This key is used by the frontend to tokenize card data securely.
+    
+    Returns:
+        JSON response containing the public API key.
     """
     return jsonify({
         'success': True,
         'data': {
             'publicApiKey': os.getenv('PUBLIC_API_KEY')
-            # Add other configuration data as needed
         }
     })
 
 @app.route('/process-payment', methods=['POST'])
 def process_payment():
     """
-    Example payment processing endpoint.
-    Customize this endpoint for your specific payment flow.
+    Process recurring payment setup using tokenized card data.
+    
+    Expected form data:
+        payment_token (str): Token representing the card data
+        first_name, last_name, email, phone: Customer information
+        street_address, city, state, billing_zip, country: Address information
+        amount (str): Payment amount
+    
+    Returns:
+        JSON response with schedule result or error message
     """
     try:
-        # TODO: Add your payment processing logic here
-        # Example implementation for basic charge:
+        # Validate required fields
+        required_fields = [
+            'payment_token', 'first_name', 'last_name', 'email', 'phone',
+            'street_address', 'city', 'state', 'billing_zip', 'country', 'amount'
+        ]
         
-        if 'payment_token' not in request.form:
-            raise ApiException('Payment token is required')
+        for field in required_fields:
+            if field not in request.form or not request.form[field].strip():
+                raise ApiException(f'Missing required field: {field}')
+        
+        # Parse and validate amount
+        try:
+            amount = float(request.form['amount'])
+            if amount <= 0:
+                raise ValueError('Amount must be positive')
+        except (ValueError, TypeError):
+            raise ApiException('Invalid amount')
 
+        # Create customer record with form data
+        customer = Customer()
+        customer.id = generate_customer_id()
+        customer.first_name = request.form['first_name'].strip()
+        customer.last_name = request.form['last_name'].strip()
+        customer.status = 'Active'
+        customer.email = request.form['email'].strip()
+        customer.address = Address()
+        customer.address.street_address_1 = request.form['street_address'].strip()
+        customer.address.city = request.form['city'].strip()
+        customer.address.province = request.form['state'].strip()
+        customer.address.postal_code = sanitize_postal_code(request.form['billing_zip'])
+        customer.address.country = request.form['country'].strip()
+        customer.work_phone = request.form['phone'].strip()
+        customer = customer.create()
+
+        # Create payment method using tokenized card information
         card = CreditCardData()
         card.token = request.form['payment_token']
 
-        # Customize amount and other parameters as needed
-        amount = float(request.form.get('amount', 10.00))
+        payment_method = customer.add_payment_method(
+            generate_payment_method_id(),
+            card
+        )
+        payment_method.name_on_account = request.form['first_name'].strip() + ' ' + request.form['last_name'].strip()
+        payment_method = payment_method.create()
 
-        # Add billing address if needed
-        if 'billing_zip' in request.form:
-            address = Address()
-            address.postal_code = sanitize_postal_code(request.form['billing_zip'])
-            
-            response = card.charge(amount)\
-                .with_allow_duplicates(True)\
-                .with_currency('USD')\
-                .with_address(address)\
-                .execute()
-        else:
-            # Process without address
-            response = card.charge(amount)\
-                .with_allow_duplicates(True)\
-                .with_currency('USD')\
-                .execute()
+        # Create payment schedule
+        schedule = payment_method.add_schedule(
+            generate_schedule_id()
+        ).with_status('Active')\
+         .with_amount(amount)\
+         .with_currency('USD')\
+         .with_start_date(date(2027, 2, 1))\
+         .with_frequency(ScheduleFrequency.Weekly)\
+         .with_end_date(date(2027, 4, 1))\
+         .with_reprocessing_count(2)\
+         .create()
 
+        # Return success response with schedule key
         return jsonify({
             'success': True,
-            'message': 'Payment processed successfully',
-            'data': {'transactionId': response.transaction_id}
+            'message': f'Schedule created successfully! Schedule Key: {schedule.key}',
+            'data': {
+                'scheduleKey': schedule.key
+            }
         })
-
     except ApiException as e:
+        # Handle API-specific exceptions and return error response
         return jsonify({
             'success': False,
-            'message': 'Payment processing failed',
-            'error': str(e)
+            'message': 'Recurring payment schedule setup failed',
+            'error': {
+                'code': 'API_ERROR',
+                'details': str(e)
+            }
         }), 400
     except Exception as e:
+        # Handle general errors
         return jsonify({
             'success': False,
-            'message': 'Payment processing failed',
-            'error': str(e)
+            'message': 'Internal server error',
+            'error': {
+                'code': 'SERVER_ERROR',
+                'details': str(e)
+            }
         }), 500
-
-# Add your custom endpoints here
-# Examples:
-# @app.route('/authorize', methods=['POST'])
-# def authorize_payment():
-#     # Authorization only logic
-#     pass
-#
-# @app.route('/capture', methods=['POST'])  
-# def capture_payment():
-#     # Capture authorized payment logic
-#     pass
-#
-# @app.route('/refund', methods=['POST'])
-# def refund_payment():
-#     # Process refund logic
-#     pass
-#
-# @app.route('/transaction/<transaction_id>')
-# def get_transaction(transaction_id):
-#     # Get transaction details logic
-#     pass
 
 # Start the server if this file is run directly
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 8000))
-    print(f"Server running at http://localhost:{port}")
-    print("Customize this template for your use case!")
-    app.run(host='0.0.0.0', port=port, debug=True)
+    app.run(host='0.0.0.0', port=port, debug=True)  # Running in debug mode for development

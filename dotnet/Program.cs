@@ -1,16 +1,17 @@
 using GlobalPayments.Api;
 using GlobalPayments.Api.Entities;
+using GlobalPayments.Api.Entities.Enums;
 using GlobalPayments.Api.PaymentMethods;
 using dotenv.net;
 
-namespace CardPaymentSample;
+namespace RecurringPaymentSample;
 
 /// <summary>
-/// Card Payment Processing Application
+/// Recurring Payment Processing Application
 /// 
-/// This application demonstrates card payment processing using the Global Payments SDK.
-/// It provides endpoints for configuration and payment processing, handling tokenized
-/// card data to ensure secure payment processing.
+/// This application demonstrates recurring payment setup using the Global Payments SDK.
+/// It provides endpoints for configuration and recurring payment schedule creation,
+/// handling tokenized card data and customer information to ensure secure processing.
 /// </summary>
 public class Program
 {
@@ -91,7 +92,43 @@ public class Program
     }
 
     /// <summary>
-    /// Configures the payment processing endpoint that handles card transactions.
+    /// Generate a UUID v4 formatted string using .NET's Guid.NewGuid()
+    /// </summary>
+    /// <returns>A UUID v4 formatted string</returns>
+    private static string GenerateUuidV4()
+    {
+        return Guid.NewGuid().ToString();
+    }
+
+    /// <summary>
+    /// Generate a unique customer ID using UUID v4 format
+    /// </summary>
+    /// <returns>A UUID v4 formatted string for customer identification</returns>
+    private static string GenerateCustomerId()
+    {
+        return GenerateUuidV4();
+    }
+
+    /// <summary>
+    /// Generate a unique schedule ID using UUID v4 format
+    /// </summary>
+    /// <returns>A UUID v4 formatted string for schedule identification</returns>
+    private static string GenerateScheduleId()
+    {
+        return GenerateUuidV4();
+    }
+
+    /// <summary>
+    /// Generate a unique payment method ID using UUID v4 format
+    /// </summary>
+    /// <returns>A UUID v4 formatted string for payment method identification</returns>
+    private static string GeneratePaymentMethodId()
+    {
+        return GenerateUuidV4();
+    }
+
+    /// <summary>
+    /// Configures the payment processing endpoint that handles recurring payment setup.
     /// </summary>
     /// <param name="app">The web application to configure</param>
     private static void ConfigurePaymentEndpoint(WebApplication app)
@@ -100,21 +137,36 @@ public class Program
         {
             // Parse form data from the request
             var form = await context.Request.ReadFormAsync();
-            var billingZip = form["billing_zip"].ToString();
             var token = form["payment_token"].ToString();
+            var firstName = form["first_name"].ToString();
+            var lastName = form["last_name"].ToString();
+            var email = form["email"].ToString();
+            var phone = form["phone"].ToString();
+            var streetAddress = form["street_address"].ToString();
+            var city = form["city"].ToString();
+            var state = form["state"].ToString();
+            var billingZip = form["billing_zip"].ToString();
+            var country = form["country"].ToString();
             var amountStr = form["amount"].ToString();
 
             // Validate required fields are present
-            if (string.IsNullOrEmpty(token) || string.IsNullOrEmpty(billingZip) || string.IsNullOrEmpty(amountStr))
+            string[] requiredFields = ["payment_token", "first_name", "last_name", "email", "phone", 
+                                     "street_address", "city", "state", "billing_zip", "country", "amount"];
+            
+            foreach (var field in requiredFields)
             {
-                return Results.BadRequest(new {
-                    success = false,
-                    message = "Payment processing failed",
-                    error = new {
-                        code = "VALIDATION_ERROR",
-                        details = "Missing required fields"
-                    }
-                });
+                var value = form[field].ToString();
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    return Results.BadRequest(new {
+                        success = false,
+                        message = "Recurring payment schedule setup failed",
+                        error = new {
+                            code = "VALIDATION_ERROR",
+                            details = $"Missing required field: {field}"
+                        }
+                    });
+                }
             }
 
             // Validate and parse amount
@@ -122,7 +174,7 @@ public class Program
             {
                 return Results.BadRequest(new {
                     success = false,
-                    message = "Payment processing failed",
+                    message = "Recurring payment schedule setup failed",
                     error = new {
                         code = "VALIDATION_ERROR",
                         details = "Amount must be a positive number"
@@ -130,56 +182,69 @@ public class Program
                 });
             }
 
-            // Initialize payment data using tokenized card information
-            var card = new CreditCardData
-            {
-                Token = token
-            };
-
-            // Create billing address for AVS verification
-            var address = new Address
-            {
-                PostalCode = SanitizePostalCode(billingZip)
-            };
-
             try
             {
-                // Process the payment transaction using the provided amount
-                var response = card.Charge(amount)
-                    .WithAllowDuplicates(true)
-                    .WithCurrency("USD")
-                    .WithAddress(address)
-                    .Execute();
-
-                // Verify transaction was successful
-                if (response.ResponseCode != "00")
+                // Create customer record with form data
+                var customer = new Customer
                 {
-                    return Results.BadRequest(new {
-                        success = false,
-                        message = "Payment processing failed",
-                        error = new {
-                            code = "PAYMENT_DECLINED",
-                            details = response.ResponseMessage
-                        }
-                    });
-                }
+                    Id = GenerateCustomerId(),
+                    FirstName = firstName.Trim(),
+                    LastName = lastName.Trim(),
+                    Status = "Active",
+                    Email = email.Trim(),
+                    WorkPhone = phone.Trim(),
+                    Address = new Address
+                    {
+                        StreetAddress1 = streetAddress.Trim(),
+                        City = city.Trim(),
+                        Province = state.Trim(),
+                        PostalCode = SanitizePostalCode(billingZip),
+                        Country = country.Trim()
+                    }
+                };
 
-                // Return success response with transaction ID
+                var createdCustomer = customer.Create();
+
+                // Create payment method using tokenized card information
+                var card = new CreditCardData
+                {
+                    Token = token
+                };
+
+                var paymentMethod = createdCustomer.AddPaymentMethod(
+                    GeneratePaymentMethodId(),
+                    card
+                ).Create();
+
+                // Create payment schedule
+                var schedule = paymentMethod.AddSchedule(
+                    GenerateScheduleId()
+                )
+                    .WithStatus("Active")
+                    .WithAmount(amount)
+                    .WithCurrency("USD")
+                    .WithStartDate(new DateTime(2027, 2, 1))
+                    .WithFrequency(ScheduleFrequency.WEEKLY)
+                    .WithEndDate(new DateTime(2027, 4, 1))
+                    .WithReprocessingCount(2)
+                    .Create();
+
+                // Return success response with schedule key
                 return Results.Ok(new
                 {
                     success = true,
-                    message = $"Payment successful! Transaction ID: {response.TransactionId}",
+                    message = $"Schedule created successfully! Schedule Key: {schedule.Key}",
                     data = new {
-                        transactionId = response.TransactionId
+                        scheduleKey = schedule.Key
                     }
                 });
             } 
             catch (ApiException ex)
             {
-                // Handle payment processing errors
+                // Handle recurring payment processing errors
                 return Results.BadRequest(new {
                     success = false,
-                    message = "Payment processing failed",
+                    message = "Recurring payment schedule setup failed",
                     error = new {
                         code = "API_ERROR",
                         details = ex.Message

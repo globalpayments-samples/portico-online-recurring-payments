@@ -8,7 +8,6 @@ This repository demonstrates how to implement recurring payment functionality us
 - [Java](./java/) - Jakarta EE servlet-based recurring payments
 - [Node.js](./nodejs/) - Express.js recurring payment scheduling
 - [PHP](./php/) - PHP recurring payment implementation
-- [Python](./python/) - Flask recurring payment service
 
 ## Features
 
@@ -39,7 +38,7 @@ Each implementation includes:
 
 ## Quick Start
 
-1. **Choose your language** - Navigate to any implementation directory (nodejs, python, php, java, dotnet)
+1. **Choose your language** - Navigate to any implementation directory (nodejs, php, java, dotnet)
 2. **Set up credentials** - Copy `.env.sample` to `.env` and add your Global Payments API keys
 3. **Run the server** - Execute `./run.sh` to install dependencies and start the server
 4. **Test recurring payments** - Open http://localhost:8000 and complete the payment form
@@ -60,7 +59,7 @@ This implementation demonstrates recurring payment scenarios:
 
 - Global Payments account with API credentials
 - Development environment for your chosen language
-- Package manager (npm, pip, composer, maven, dotnet, go mod)
+- Package manager (npm, composer, maven, dotnet)
 
 ## Customization Guide
 

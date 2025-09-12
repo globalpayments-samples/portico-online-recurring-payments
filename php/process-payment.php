@@ -22,6 +22,8 @@ require_once 'vendor/autoload.php';
 
 use Dotenv\Dotenv;
 use GlobalPayments\Api\Entities\Address;
+use GlobalPayments\Api\Entities\Customer;
+use GlobalPayments\Api\Entities\Enums\ScheduleFrequency;
 use GlobalPayments\Api\Entities\Exceptions\ApiException;
 use GlobalPayments\Api\PaymentMethods\CreditCardData;
 use GlobalPayments\Api\ServiceConfigs\Gateways\PorticoConfig;
@@ -69,13 +71,63 @@ function sanitizePostalCode(?string $postalCode): string
     return substr($sanitized, 0, 10);
 }
 
+/**
+ * Generate a UUID v4 formatted string
+ *
+ * @return string A UUID v4 formatted string
+ */
+function generateUuidV4(): string
+{
+    $data = random_bytes(16);
+    $data[6] = chr(ord($data[6]) & 0x0f | 0x40); // Set version to 0100
+    $data[8] = chr(ord($data[8]) & 0x3f | 0x80); // Set variant
+    return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
+}
+
+/**
+ * Generate a unique customer ID using UUID v4 format
+ *
+ * @return string A UUID v4 formatted string for customer identification
+ */
+function generateCustomerId(): string
+{
+    return generateUuidV4();
+}
+
+/**
+ * Generate a unique schedule ID using UUID v4 format
+ *
+ * @return string A UUID v4 formatted string for schedule identification
+ */
+function generateScheduleId(): string
+{
+    return generateUuidV4();
+}
+
+/**
+ * Generate a unique payment method ID using UUID v4 format
+ *
+ * @return string A UUID v4 formatted string for payment method identification
+ */
+function generatePaymentMethodId(): string
+{
+    return generateUuidV4();
+}
+
 // Initialize SDK configuration
 configureSdk();
 
 try {
     // Validate required fields
-    if (!isset($_POST['payment_token'], $_POST['billing_zip'], $_POST['amount'])) {
-        throw new ApiException('Missing required fields');
+    $requiredFields = [
+        'payment_token', 'first_name', 'last_name', 'email', 'phone', 
+        'street_address', 'city', 'state', 'billing_zip', 'country', 'amount'
+    ];
+    
+    foreach ($requiredFields as $field) {
+        if (!isset($_POST[$field]) || empty(trim($_POST[$field]))) {
+            throw new ApiException("Missing required field: $field");
+        }
     }
     
     // Parse and validate amount
@@ -84,41 +136,50 @@ try {
         throw new ApiException('Invalid amount');
     }
 
-    // Initialize payment data using tokenized card information
+    // Create customer record with form data
+    $customer = new Customer();
+    $customer->id = generateCustomerId();
+    $customer->firstName = trim($_POST['first_name']);
+    $customer->lastName = trim($_POST['last_name']);
+    $customer->status = 'Active';
+    $customer->email = trim($_POST['email']);
+    $customer->address = new Address();
+    $customer->address->streetAddress1 = trim($_POST['street_address']);
+    $customer->address->city = trim($_POST['city']);
+    $customer->address->province = trim($_POST['state']);
+    $customer->address->postalCode = sanitizePostalCode($_POST['billing_zip']);
+    $customer->address->country = trim($_POST['country']);
+    $customer->workPhone = trim($_POST['phone']);
+    $customer = $customer->create();
+
+    // Create payment method using tokenized card information
     $card = new CreditCardData();
     $card->token = $_POST['payment_token'];
 
-    // Create billing address for AVS verification
-    $address = new Address();
-    $address->postalCode = sanitizePostalCode($_POST['billing_zip']);
+    $paymentMethod = $customer->addPaymentMethod(
+        generatePaymentMethodId(),
+        $card
+    )->create();
 
-    // Process the payment transaction with specified amount
-    $response = $card->charge($amount)
-        ->withAllowDuplicates(true)
+    // Create payment schedule
+    $schedule = $paymentMethod->addSchedule(
+        generateScheduleId(),
+    )
+        ->withStatus('Active')
+        ->withAmount($amount)
         ->withCurrency('USD')
-        ->withAddress($address)
-        ->execute();
-    
-    // Verify transaction was successful
-    if ($response->responseCode !== '00') {
-        http_response_code(400);
-        echo json_encode([
-            'success' => false,
-            'message' => 'Payment processing failed',
-            'error' => [
-                'code' => 'PAYMENT_DECLINED',
-                'details' => $response->responseMessage
-            ]
-        ]);
-        exit;
-    }
+        ->withStartDate(\DateTime::createFromFormat('Y-m-d', '2027-02-01'))
+        ->withFrequency(ScheduleFrequency::WEEKLY)
+        ->withEndDate(\DateTime::createFromFormat('Y-m-d', '2027-04-01'))
+        ->withReprocessingCount(2)
+        ->create();
 
     // Return success response with transaction ID
     echo json_encode([
         'success' => true,
-        'message' => 'Payment successful! Transaction ID: ' . $response->transactionId,
+        'message' => 'Schedule created successfully! Schedule Key: ' . $schedule->key,
         'data' => [
-            'transactionId' => $response->transactionId
+            'scheduleKey' => $schedule->key
         ]
     ]);
 } catch (ApiException $e) {
@@ -126,7 +187,7 @@ try {
     http_response_code(400);
     echo json_encode([
         'success' => false,
-        'message' => 'Payment processing failed',
+        'message' => 'Recurring payment schedule setup failed',
         'error' => [
             'code' => 'API_ERROR',
             'details' => $e->getMessage()

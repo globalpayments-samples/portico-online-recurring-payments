@@ -1,100 +1,104 @@
-# Global Payments SDK Starter Template
+# Global Payments Recurring Payments Examples
 
-This starter template provides a customizable foundation for Global Payments SDK integration across multiple programming languages. Each implementation includes basic SDK setup, configuration management, and placeholder endpoints that you can modify for your specific payment use cases.
+This repository demonstrates how to implement recurring payment functionality using the Global Payments SDK across multiple programming languages. Each implementation shows how to set up customers, payment methods, and recurring payment schedules.
 
 ## Available Implementations
 
-- [.NET Core](./dotnet/) - ASP.NET Core web application
-- [Go](./go/) - Go HTTP server application
-- [Java](./java/) - Jakarta EE servlet-based web application
-- [Node.js](./nodejs/) - Express.js web application
-- [PHP](./php/) - PHP web application
-- [Python](./python/) - Flask web application
+- [.NET Core](./dotnet/) - ASP.NET Core recurring payment setup
+- [Java](./java/) - Jakarta EE servlet-based recurring payments
+- [Node.js](./nodejs/) - Express.js recurring payment scheduling
+- [PHP](./php/) - PHP recurring payment implementation
 
-## Template Features
+## Features
 
-- **SDK Configuration** - Basic setup with environment variables
-- **Placeholder Endpoints** - Ready-to-customize API endpoints  
-- **Error Handling** - Basic error handling structure
+- **Customer Management** - Create and manage customer records
+- **Payment Method Storage** - Securely tokenize and store payment methods
+- **Recurring Schedules** - Set up weekly, monthly, or custom payment schedules
+- **Error Handling** - Comprehensive error handling for payment failures
 - **Client Integration** - HTML form with hosted fields tokenization
-- **Multiple Languages** - Consistent structure across all implementations
+- **Multiple Languages** - Consistent API structure across all implementations
 
-## Customization Options
+## Implementation Details
 
-Each template includes:
+Each implementation includes:
 
-1. **Basic SDK Setup**
-   - Environment variable configuration
+1. **SDK Setup**
+   - Environment variable configuration  
    - Service URL configuration
    - API key management
 
-2. **Starter Endpoints**
-   - GET `/config` - Configuration endpoint
-   - POST `/process-payment` - Payment processing template
-   - Commented examples for additional endpoints (authorize, capture, refund, etc.)
+2. **Core Endpoints**
+   - GET `/config` - Returns public API key for client-side tokenization
+   - POST `/process-payment` - Creates customer, payment method, and recurring schedule
 
-3. **Ready-to-Modify Structure**
-   - TODO comments for customization points
-   - Example payment logic you can adapt
-   - Placeholder functions for various payment flows
+3. **Recurring Payment Flow**
+   - Customer record creation with billing information
+   - Secure payment method storage using tokenized card data
+   - Recurring payment schedule configuration with frequency and duration
 
 ## Quick Start
 
-1. **Copy the template** - Copy this directory to start your new project
-2. **Choose your language** - Navigate to any implementation directory (nodejs, python, php, java, dotnet, go)
-3. **Set up credentials** - Copy `.env.sample` to `.env` and add your Global Payments API keys
-4. **Run the server** - Execute `./run.sh` to install dependencies and start the server
-5. **Customize** - Modify the code for your specific payment use case
+1. **Choose your language** - Navigate to any implementation directory (nodejs, php, java, dotnet)
+2. **Set up credentials** - Copy `.env.sample` to `.env` and add your Global Payments API keys
+3. **Run the server** - Execute `./run.sh` to install dependencies and start the server
+4. **Test recurring payments** - Open http://localhost:8000 and complete the payment form
+5. **View results** - Check the server response for the created schedule key
 
-## Use Cases You Can Build
+## Recurring Payment Use Cases
 
-This template can be adapted for various payment scenarios:
+This implementation demonstrates recurring payment scenarios:
 
-- **Basic Charges** - Simple one-time payments
-- **Authorization/Capture** - Two-step payment processing
-- **Subscriptions** - Recurring payment processing
-- **Refunds** - Payment reversal functionality
-- **Multi-step Checkouts** - Complex payment flows
-- **Payment Methods** - Credit cards, ACH, alternative payments
+- **Subscription Services** - Monthly/yearly service subscriptions
+- **Installment Plans** - Breaking large purchases into smaller payments
+- **Membership Fees** - Regular membership or service fees
+- **Utility Billing** - Regular utility or service billing
+- **Donation Programs** - Recurring charitable donations
+- **Gym Memberships** - Fitness center recurring billing
 
 ## Prerequisites
 
 - Global Payments account with API credentials
 - Development environment for your chosen language
-- Package manager (npm, pip, composer, maven, dotnet, go mod)
+- Package manager (npm, composer, maven, dotnet)
 
 ## Customization Guide
 
-### Adding New Endpoints
+### Modifying Recurring Schedules
 
-Each implementation includes commented examples for common payment operations:
+You can customize the recurring payment schedule in the `/process-payment` endpoint:
 
 ```javascript
-// Authorization only
-app.post('/authorize', ...)
+// Weekly schedule (current example)
+.withFrequency(ScheduleFrequency.Weekly)
+.withStartDate(new Date('2027-02-01'))
+.withEndDate(new Date('2027-04-01'))
 
-// Capture authorized payment  
-app.post('/capture', ...)
+// Monthly subscription
+.withFrequency(ScheduleFrequency.Monthly)
+.withStartDate(new Date())
+.withEndDate(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)) // 1 year
 
-// Process refund
-app.post('/refund', ...)
-
-// Get transaction details
-app.get('/transaction/:id', ...)
+// Semi-annual billing
+.withFrequency(ScheduleFrequency.SemiAnnually)
 ```
 
-### Modifying Payment Logic
+### Adding Schedule Management
 
-1. Update the `/process-payment` endpoint for your specific flow
-2. Add validation for your required fields
-3. Customize error handling and responses
-4. Add logging and monitoring as needed
+Extend the implementation with additional endpoints for:
+1. Retrieving schedule details
+2. Modifying existing schedules  
+3. Canceling or pausing schedules
+4. Processing schedule payments manually
 
 ### Production Considerations
 
-Enhance the template for production use with:
+For production recurring payment systems, enhance with:
 - Input validation and sanitization
 - Comprehensive error handling and logging
 - Security headers and rate limiting
-- PCI compliance measures
-- Monitoring and alerting
+- PCI compliance measures for stored payment methods
+- Retry logic for failed recurring payments
+- Customer notification systems for payment failures
+- Schedule modification and cancellation features
+- Monitoring and alerting for payment processing
+- Webhook handling for payment status updates

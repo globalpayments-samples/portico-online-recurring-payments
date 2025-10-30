@@ -4,10 +4,10 @@ This repository demonstrates how to implement recurring payment functionality us
 
 ## Available Implementations
 
-- [.NET Core](./dotnet/) - ASP.NET Core recurring payment setup
-- [Java](./java/) - Jakarta EE servlet-based recurring payments
-- [Node.js](./nodejs/) - Express.js recurring payment scheduling
-- [PHP](./php/) - PHP recurring payment implementation
+- [.NET Core](./dotnet/) - ([Preview](https://githubbox.com/globalpayments-samples/portico-online-recurring-payments/tree/main/dotnet)) - ASP.NET Core web application
+- [Java](./java/) - ([Preview](https://githubbox.com/globalpayments-samples/portico-online-recurring-payments/tree/main/java)) - Jakarta EE servlet-based web application
+- [Node.js](./nodejs/) - ([Preview](https://githubbox.com/globalpayments-samples/portico-online-recurring-payments/tree/main/nodejs)) - Express.js web application
+- [PHP](./php/) - ([Preview](https://githubbox.com/globalpayments-samples/portico-online-recurring-payments/tree/main/php)) - PHP web application
 
 ## Features
 

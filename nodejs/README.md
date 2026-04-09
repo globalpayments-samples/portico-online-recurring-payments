@@ -1,134 +1,242 @@
-# Node.js Recurring Payment Example
+# Node.js — Portico Online Recurring Payments
 
-This example demonstrates recurring payment setup using Express.js and the Global Payments SDK.
+Node.js/Express implementation of a recurring payment setup using the Global Payments Portico gateway. Uses Heartland Hosted Fields for PCI SAQ-A compliant card tokenization — card data never touches your server.
 
 ## Requirements
 
-- Node.js 14.x or later
-- npm (Node Package Manager)
-- Global Payments account and API credentials
+- Node.js 18+
+- npm
+- Global Payments Portico account with API credentials
 
 ## Project Structure
 
-- `server.js` - Main application file containing server setup and recurring payment processing
-- `index.html` - Client-side payment form with customer information collection
-- `package.json` - Project dependencies and scripts
-- `.env.sample` - Template for environment variables
-- `run.sh` - Convenience script to run the application
+```
+nodejs/
+├── server.js       # Express server — GET /config and POST /process-payment
+├── index.html      # Recurring payment form frontend
+├── package.json    # globalpayments-api + dotenv
+├── .env.sample
+├── Dockerfile
+├── run.sh
+├── .devcontainer/
+└── .codesandbox/
+```
 
 ## Setup
 
-1. Clone this repository
-2. Copy `.env.sample` to `.env`
-3. Update `.env` with your Global Payments credentials:
-   ```
-   PUBLIC_API_KEY=pk_test_xxx
-   SECRET_API_KEY=sk_test_xxx
-   ```
-4. Install dependencies:
-   ```bash
-   npm install
-   ```
-5. Run the application:
-   ```bash
-   ./run.sh
-   ```
-   Or manually:
-   ```bash
-   node server.js
-   ```
+**1. Install dependencies**
+```bash
+npm install
+```
 
-## Implementation Details
+**2. Configure credentials**
+```bash
+cp .env.sample .env
+```
 
-### Server Setup
-The application uses Express.js to create a web server that:
-- Serves static files including the payment form
-- Creates customers and recurring payment schedules
-- Provides configuration endpoint for client-side SDK
-- Handles JSON and form-encoded requests
+Edit `.env`:
+```env
+PUBLIC_API_KEY=pkapi_cert_jKc1FtuyAydZhZfbB3
+SECRET_API_KEY=skapi_cert_MTyMAQBiHVEAewvIzXVFcmUd2UcyBge_eCpaASUp0A
+PORT=8000
+```
 
-### SDK Configuration
-Global Payments SDK configuration using environment variables:
-- Loads credentials from .env file
-- Sets up service URL for API communication
-- Configures developer identification
+**3. Start the server**
+```bash
+npm start
+# Open http://localhost:8000
+```
 
-### Recurring Payment Setup
-Recurring payment setup flow:
-1. Client submits payment token and complete customer information
-2. Server creates Customer record with billing details
-3. Creates CreditCardData with tokenized payment information
-4. Adds payment method to customer account
-5. Creates recurring payment schedule (weekly, from Feb 2027 to April 2027)
-6. Returns success response with schedule key
+Or use the convenience script:
+```bash
+./run.sh
+```
 
-### Error Handling
-Implements comprehensive error handling:
-- Catches and processes API exceptions
-- Differentiates between API and general errors
-- Returns appropriate error messages
+## Environment Variables
+
+| Variable | Description | Required | Example |
+|----------|-------------|----------|---------|
+| `PUBLIC_API_KEY` | Public key for Heartland Hosted Fields (browser) | yes | `pkapi_cert_jKc1FtuyAydZhZfbB3` |
+| `SECRET_API_KEY` | Secret key for server-side Portico API calls | yes | `skapi_cert_MTyMAQBiHVEA...` |
+| `PORT` | Server port | no | `8000` (default) |
+
+## SDK Configuration
+
+```javascript
+import { ServicesContainer, PorticoConfig } from 'globalpayments-api';
+import * as dotenv from 'dotenv';
+
+dotenv.config();
+
+const config = new PorticoConfig();
+config.secretApiKey = process.env.SECRET_API_KEY;
+config.serviceUrl = 'https://cert.api2.heartlandportico.com';
+ServicesContainer.configureService(config);
+```
 
 ## API Endpoints
 
 ### GET /config
-Returns public API key for client-side SDK initialization.
 
-Response:
+Returns the public API key for Heartland Hosted Fields initialization.
+
+**Response:**
 ```json
 {
-    "publicApiKey": "pk_test_xxx"
+  "success": true,
+  "data": {
+    "publicApiKey": "pkapi_cert_jKc1FtuyAydZhZfbB3"
+  }
 }
 ```
+
+---
 
 ### POST /process-payment
-Creates a recurring payment schedule using customer information and tokenized payment method.
 
-Request Parameters:
-- `payment_token` (string, required) - Token from client-side SDK
-- `first_name` (string, required) - Customer's first name
-- `last_name` (string, required) - Customer's last name
-- `email` (string, required) - Customer's email address
-- `phone` (string, required) - Customer's phone number
-- `street_address` (string, required) - Customer's street address
-- `city` (string, required) - Customer's city
-- `state` (string, required) - Customer's state/province
-- `billing_zip` (string, required) - Billing postal code
-- `country` (string, required) - Customer's country
-- `amount` (string, required) - Recurring payment amount
+Creates a Customer, attaches a tokenized payment method, and creates a recurring schedule.
 
-Response (Success):
+**Request fields:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `payment_token` | string | yes | Token from Heartland Hosted Fields |
+| `first_name` | string | yes | Customer first name |
+| `last_name` | string | yes | Customer last name |
+| `email` | string | yes | Customer email address |
+| `phone` | string | yes | Customer phone number |
+| `street_address` | string | yes | Billing street address |
+| `city` | string | yes | Billing city |
+| `state` | string | yes | Billing state/province |
+| `billing_zip` | string | yes | Billing postal code |
+| `country` | string | yes | Billing country |
+| `amount` | string | yes | Recurring payment amount |
+
+**Example request:**
 ```json
 {
-    "success": true,
-    "message": "Schedule created successfully! Schedule Key: xxx",
-    "data": {
-        "scheduleKey": "xxx"
-    }
+  "payment_token": "supt_xxxxxxxxxxxxxx",
+  "first_name": "Jane",
+  "last_name": "Doe",
+  "email": "jane@example.com",
+  "phone": "555-555-5555",
+  "street_address": "123 Main St",
+  "city": "Anytown",
+  "state": "GA",
+  "billing_zip": "12345",
+  "country": "US",
+  "amount": "25.00"
 }
 ```
 
-Response (Error):
+**Success response (200):**
 ```json
 {
-    "success": false,
-    "message": "Recurring payment schedule setup failed",
-    "error": {
-        "code": "API_ERROR",
-        "details": "error message"
-    }
+  "success": true,
+  "message": "Schedule created successfully! Schedule Key: <scheduleKey>",
+  "data": {
+    "scheduleKey": "<scheduleKey>"
+  }
 }
 ```
 
-## Security Considerations
+**Error response (400):**
+```json
+{
+  "success": false,
+  "message": "Recurring payment schedule setup failed",
+  "error": {
+    "code": "API_ERROR",
+    "details": "Error message details"
+  }
+}
+```
 
-This example demonstrates basic recurring payment implementation. For production use, consider:
-- Implementing additional input validation for customer data
-- Adding request rate limiting to prevent abuse
-- Including security headers for web security
-- Implementing proper logging and monitoring for recurring payments
-- Adding payment fraud prevention measures
-- Using HTTPS in production for secure data transmission
-- Configuring Cross-Origin Resource Sharing (CORS) appropriately
-- Implementing customer authentication for schedule management
-- Adding webhook endpoints for payment failure notifications
-- Securing stored payment method tokens with proper encryption
+## Recurring Payment Flow
+
+```javascript
+import {
+    Customer, CreditCardData, Address,
+    ScheduleFrequency, EmailReceipt
+} from 'globalpayments-api';
+
+// Step 1 — Create customer
+const customer = new Customer();
+customer.id = generateCustomerId();
+customer.firstName = req.body.first_name.trim();
+customer.lastName = req.body.last_name.trim();
+customer.status = 'Active';
+customer.email = req.body.email.trim();
+customer.address = new Address();
+customer.address.streetAddress1 = req.body.street_address.trim();
+customer.address.city = req.body.city.trim();
+customer.address.province = req.body.state.trim();
+customer.address.postalCode = sanitizePostalCode(req.body.billing_zip);
+customer.address.country = req.body.country.trim();
+customer.workPhone = req.body.phone.trim();
+const createdCustomer = await customer.create();
+
+// Step 2 — Store payment method
+const card = new CreditCardData();
+card.token = req.body.payment_token;
+const paymentMethod = await createdCustomer
+    .addPaymentMethod(generatePaymentMethodId(), card)
+    .create();
+
+// Step 3 — Create schedule
+const schedule = await paymentMethod.addSchedule(generateScheduleId())
+    .withStatus('Active')
+    .withAmount(amount)
+    .withCurrency('USD')
+    .withStartDate(new Date('2027-02-01'))
+    .withFrequency(ScheduleFrequency.Weekly)
+    .withEndDate(new Date('2027-04-01'))
+    .withReprocessingCount(2)
+    .withEmailReceipt(EmailReceipt.Never)
+    .create();
+```
+
+## Test Cards
+
+| Brand | Card Number | CVV | Expiry |
+|-------|-------------|-----|--------|
+| Visa | 4012002000060016 | 123 | Any future date |
+| Mastercard | 5473500000000014 | 123 | Any future date |
+| Discover | 6011000990156527 | 123 | Any future date |
+| Amex | 372700699251018 | 1234 | Any future date |
+
+## Docker
+
+```bash
+docker build -t portico-recurring-nodejs .
+docker run -p 8001:8000 \
+  -e PUBLIC_API_KEY=your_key \
+  -e SECRET_API_KEY=your_key \
+  portico-recurring-nodejs
+# Open http://localhost:8001
+```
+
+Or via docker-compose from the project root:
+```bash
+docker-compose up nodejs
+```
+
+## Troubleshooting
+
+**Hosted Fields not loading**
+Verify `GET /config` returns a 200 with a valid `publicApiKey`. Check the browser console for Heartland.js initialization errors. Ensure `PUBLIC_API_KEY` is set in `.env` and the server was restarted after editing it.
+
+**"Missing required field: X" (400)**
+All 11 fields are required — `payment_token`, `first_name`, `last_name`, `email`, `phone`, `street_address`, `city`, `state`, `billing_zip`, `country`, `amount`. Confirm all fields are included as non-empty strings.
+
+**"Recurring payment schedule setup failed" — Portico error**
+Confirm `SECRET_API_KEY` in `.env` starts with `skapi_cert_`. `process.env.SECRET_API_KEY` is read directly — trim any trailing whitespace before setting the value. Check the server console for the full Portico error.
+
+**`import` syntax error on startup**
+The project uses ES module syntax. Confirm `"type": "module"` is in `package.json` and you are running Node.js 18+. Check with `node --version`.
+
+**Schedule created but no immediate charge**
+Schedule creation does not immediately charge the customer. The first charge occurs on `start_date` (hardcoded to `2027-02-01` in this example). Ensure this date is in the future when testing.
+
+**"Invalid amount" (400)**
+`amount` must parse to a positive number. Empty string or `"0"` will fail before the Portico API is called.

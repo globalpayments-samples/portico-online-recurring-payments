@@ -1,104 +1,393 @@
-# Global Payments Recurring Payments Examples
+# Portico Recurring Payments — Multi-Language Examples
 
-This repository demonstrates how to implement recurring payment functionality using the Global Payments SDK across multiple programming languages. Each implementation shows how to set up customers, payment methods, and recurring payment schedules.
+Complete implementation of recurring payment schedules using the Global Payments Portico gateway across 4 programming languages. Each implementation demonstrates how to create a customer record, store a tokenized payment method, and configure a recurring billing schedule using the official Global Payments SDK.
 
 ## Available Implementations
 
-- [.NET Core](./dotnet/) - ([Preview](https://githubbox.com/globalpayments-samples/portico-online-recurring-payments/tree/main/dotnet)) - ASP.NET Core web application
-- [Java](./java/) - ([Preview](https://githubbox.com/globalpayments-samples/portico-online-recurring-payments/tree/main/java)) - Jakarta EE servlet-based web application
-- [Node.js](./nodejs/) - ([Preview](https://githubbox.com/globalpayments-samples/portico-online-recurring-payments/tree/main/nodejs)) - Express.js web application
-- [PHP](./php/) - ([Preview](https://githubbox.com/globalpayments-samples/portico-online-recurring-payments/tree/main/php)) - PHP web application
+| Language | Framework | SDK | Port | Preview |
+|----------|-----------|-----|------|---------|
+| [**PHP**](./php/) | Built-in Server | globalpayments/php-sdk | 8003 | [Open in CodeSandbox](https://githubbox.com/globalpayments-samples/portico-online-recurring-payments/tree/main/php) |
+| [**Node.js**](./nodejs/) | Express.js | globalpayments-api | 8001 | [Open in CodeSandbox](https://githubbox.com/globalpayments-samples/portico-online-recurring-payments/tree/main/nodejs) |
+| [**.NET**](./dotnet/) | ASP.NET Core | GlobalPayments.Api | 8006 | [Open in CodeSandbox](https://githubbox.com/globalpayments-samples/portico-online-recurring-payments/tree/main/dotnet) |
+| [**Java**](./java/) | Jakarta Servlet | com.globalpayments:java-sdk | 8004 | [Open in CodeSandbox](https://githubbox.com/globalpayments-samples/portico-online-recurring-payments/tree/main/java) |
 
-## Features
+## How It Works
 
-- **Customer Management** - Create and manage customer records
-- **Payment Method Storage** - Securely tokenize and store payment methods
-- **Recurring Schedules** - Set up weekly, monthly, or custom payment schedules
-- **Error Handling** - Comprehensive error handling for payment failures
-- **Client Integration** - HTML form with hosted fields tokenization
-- **Multiple Languages** - Consistent API structure across all implementations
-
-## Implementation Details
-
-Each implementation includes:
-
-1. **SDK Setup**
-   - Environment variable configuration  
-   - Service URL configuration
-   - API key management
-
-2. **Core Endpoints**
-   - GET `/config` - Returns public API key for client-side tokenization
-   - POST `/process-payment` - Creates customer, payment method, and recurring schedule
-
-3. **Recurring Payment Flow**
-   - Customer record creation with billing information
-   - Secure payment method storage using tokenized card data
-   - Recurring payment schedule configuration with frequency and duration
-
-## Quick Start
-
-1. **Choose your language** - Navigate to any implementation directory (nodejs, php, java, dotnet)
-2. **Set up credentials** - Copy `.env.sample` to `.env` and add your Global Payments API keys
-3. **Run the server** - Execute `./run.sh` to install dependencies and start the server
-4. **Test recurring payments** - Open http://localhost:8000 and complete the payment form
-5. **View results** - Check the server response for the created schedule key
+```
+Browser                     Backend                        Portico API
+   │                            │                               │
+   │── GET /config ────────────>│                               │
+   │<─ { publicApiKey } ────────│                               │
+   │                            │                               │
+   │  [User fills form]         │                               │
+   │  [Heartland.js tokenizes]  │                               │
+   │                            │                               │
+   │── POST /process-payment ──>│                               │
+   │   payment_token            │── Customer.create() ─────────>│
+   │   customer info            │<─ customer record ────────────│
+   │   amount                   │                               │
+   │                            │── customer.addPaymentMethod()─>│
+   │                            │<─ paymentMethod record ───────│
+   │                            │                               │
+   │                            │── paymentMethod.addSchedule()─>│
+   │                            │<─ { scheduleKey } ────────────│
+   │                            │                               │
+   │<─ { success, scheduleKey } │                               │
+```
 
 ## Recurring Payment Use Cases
 
-This implementation demonstrates recurring payment scenarios:
-
-- **Subscription Services** - Monthly/yearly service subscriptions
-- **Installment Plans** - Breaking large purchases into smaller payments
-- **Membership Fees** - Regular membership or service fees
-- **Utility Billing** - Regular utility or service billing
-- **Donation Programs** - Recurring charitable donations
-- **Gym Memberships** - Fitness center recurring billing
+| Scenario | Frequency | Example |
+|----------|-----------|---------|
+| Subscription service | Monthly | SaaS platform billing |
+| Installment plan | Weekly | Buy-now-pay-later split |
+| Membership fee | Annually | Annual club renewal |
+| Utility billing | Monthly | Regular service billing |
+| Charitable giving | Weekly | Regular donation program |
+| Gym membership | Monthly | Fitness center auto-pay |
 
 ## Prerequisites
 
-- Global Payments account with API credentials
-- Development environment for your chosen language
-- Package manager (npm, composer, maven, dotnet)
+- Global Payments Portico developer account
+- Portico API credentials (`PUBLIC_API_KEY` and `SECRET_API_KEY`)
+- Docker, or runtime for your chosen language (PHP 8.0+, Node.js 18+, .NET 8+, Java 17+)
 
-## Customization Guide
+## Quick Start
 
-### Modifying Recurring Schedules
+### 1. Clone the Repository
 
-You can customize the recurring payment schedule in the `/process-payment` endpoint:
-
-```javascript
-// Weekly schedule (current example)
-.withFrequency(ScheduleFrequency.Weekly)
-.withStartDate(new Date('2027-02-01'))
-.withEndDate(new Date('2027-04-01'))
-
-// Monthly subscription
-.withFrequency(ScheduleFrequency.Monthly)
-.withStartDate(new Date())
-.withEndDate(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)) // 1 year
-
-// Semi-annual billing
-.withFrequency(ScheduleFrequency.SemiAnnually)
+```bash
+git clone https://github.com/globalpayments-samples/portico-online-recurring-payments.git
+cd portico-online-recurring-payments
 ```
 
-### Adding Schedule Management
+### 2. Choose a Language and Configure Credentials
 
-Extend the implementation with additional endpoints for:
-1. Retrieving schedule details
-2. Modifying existing schedules  
-3. Canceling or pausing schedules
-4. Processing schedule payments manually
+```bash
+cd php   # or nodejs, dotnet, java
+cp .env.sample .env
+```
 
-### Production Considerations
+Edit `.env`:
 
-For production recurring payment systems, enhance with:
-- Input validation and sanitization
-- Comprehensive error handling and logging
-- Security headers and rate limiting
-- PCI compliance measures for stored payment methods
-- Retry logic for failed recurring payments
-- Customer notification systems for payment failures
-- Schedule modification and cancellation features
-- Monitoring and alerting for payment processing
-- Webhook handling for payment status updates
+```env
+PUBLIC_API_KEY=pkapi_cert_your_key_here
+SECRET_API_KEY=skapi_cert_your_key_here
+```
+
+### 3. Install, Build, and Run
+
+**PHP:**
+```bash
+composer install
+php -S localhost:8000
+# Open http://localhost:8000
+```
+
+**Node.js:**
+```bash
+npm install
+npm start
+# Open http://localhost:8000
+```
+
+**.NET:**
+```bash
+dotnet restore
+dotnet run
+# Open http://localhost:5000
+```
+
+**Java:**
+```bash
+mvn clean package
+mvn cargo:run
+# Open http://localhost:8080
+```
+
+### 4. Test a Recurring Payment
+
+1. Open the app in your browser
+2. Enter a billing amount (e.g., `19.99`)
+3. Fill in customer info (name, email, address)
+4. Enter a test card number (see [Test Cards](#test-cards) below)
+5. Submit the form
+6. Verify the response includes a `scheduleKey`
+
+## Docker Setup
+
+Run all four language implementations simultaneously:
+
+```bash
+# Copy root .env first
+cp php/.env.sample .env   # or any language — all use same variables
+
+docker-compose up
+```
+
+| Service | External Port | URL |
+|---------|--------------|-----|
+| nodejs  | 8001 | http://localhost:8001 |
+| php     | 8003 | http://localhost:8003 |
+| java    | 8004 | http://localhost:8004 |
+| dotnet  | 8006 | http://localhost:8006 |
+
+Run a single service:
+
+```bash
+docker-compose up php
+docker-compose up nodejs
+docker-compose up dotnet
+docker-compose up java
+```
+
+## API Endpoints
+
+### GET /config
+
+Returns the public API key for Heartland.js tokenization.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "publicApiKey": "pkapi_cert_jKc1FtuyAydZhZfbB3"
+  }
+}
+```
+
+---
+
+### POST /process-payment
+
+Creates a customer record, stores a tokenized payment method, and sets up a recurring payment schedule.
+
+**Request body** (`application/x-www-form-urlencoded` or `application/json`):
+
+```json
+{
+  "payment_token": "supt_xxxxxxxxxxxxxx",
+  "first_name": "Jane",
+  "last_name": "Smith",
+  "email": "jane.smith@example.com",
+  "phone": "5551234567",
+  "street_address": "123 Main St",
+  "city": "Atlanta",
+  "state": "GA",
+  "billing_zip": "30301",
+  "country": "US",
+  "amount": "19.99"
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `payment_token` | string | ✅ | Tokenized card from Heartland.js |
+| `first_name` | string | ✅ | Customer first name |
+| `last_name` | string | ✅ | Customer last name |
+| `email` | string | ✅ | Customer email address |
+| `phone` | string | ✅ | Customer phone number |
+| `street_address` | string | ✅ | Billing street address |
+| `city` | string | ✅ | Billing city |
+| `state` | string | ✅ | Billing state / province |
+| `billing_zip` | string | ✅ | Billing postal code |
+| `country` | string | ✅ | Billing country code (e.g. `US`) |
+| `amount` | string | ✅ | Recurring charge amount (e.g. `19.99`) |
+
+**Response (success):**
+```json
+{
+  "success": true,
+  "message": "Schedule created successfully! Schedule Key: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "data": {
+    "scheduleKey": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+  }
+}
+```
+
+**Response (error):**
+```json
+{
+  "success": false,
+  "message": "Recurring payment schedule setup failed",
+  "error": {
+    "code": "API_ERROR",
+    "details": "Specific error message from the API"
+  }
+}
+```
+
+## Recurring Payment Flow
+
+The server-side implementation follows this three-step sequence on every call to `/process-payment`:
+
+**Step 1 — Create customer**
+```
+Customer record created with billing address and contact info.
+Returns a customer ID used in subsequent calls.
+```
+
+**Step 2 — Store payment method**
+```
+Tokenized card attached to the customer as a saved payment method.
+Returns a payment method ID.
+```
+
+**Step 3 — Create schedule**
+```
+Schedule configured with:
+  - Frequency: Weekly
+  - Start date: 2027-02-01
+  - End date:   2027-04-01
+  - Currency:   USD
+  - Reprocessing attempts: 2
+
+Returns the scheduleKey identifying the active recurring billing agreement.
+```
+
+## SDK Configuration
+
+All implementations use `PorticoConfig` with the `secretApiKey`:
+
+**PHP:**
+```php
+$config = new PorticoConfig();
+$config->secretApiKey = $_ENV['SECRET_API_KEY'];
+$config->developerId = '000000';
+$config->versionNumber = '0000';
+$config->serviceUrl = 'https://cert.api2.heartlandportico.com';
+
+ServicesContainer::configureService($config);
+```
+
+**Node.js:**
+```javascript
+const config = new PorticoConfig();
+config.secretApiKey = process.env.SECRET_API_KEY;
+ServicesContainer.configure(config);
+```
+
+**.NET:**
+```csharp
+var config = new PorticoConfig {
+    SecretApiKey = Environment.GetEnvironmentVariable("SECRET_API_KEY")
+};
+ServicesContainer.Configure(config);
+```
+
+**Java:**
+```java
+PorticoConfig config = new PorticoConfig();
+config.setSecretApiKey(System.getenv("SECRET_API_KEY"));
+ServicesContainer.configure(config);
+```
+
+## Environment Variables
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `PUBLIC_API_KEY` | Public key for Heartland.js client-side tokenization | `pkapi_cert_jKc1FtuyAydZhZfbB3` |
+| `SECRET_API_KEY` | Secret key for server-side Portico API calls | `skapi_cert_MTyMAQBiHVEAe...` |
+
+Obtain credentials from your [Global Payments developer account](https://developer.globalpay.com/).
+
+## Test Cards
+
+Use these card numbers in the Portico certification environment:
+
+| Brand | Card Number | CVV | Expiry |
+|-------|-------------|-----|--------|
+| Visa | 4012002000060016 | 123 | Any future date |
+| Mastercard | 5473500000000014 | 123 | Any future date |
+| Discover | 6011000990156527 | 123 | Any future date |
+| Amex | 372700699251018 | 1234 | Any future date |
+
+Additional test cards: [developer.globalpay.com/resources/test-cards](https://developer.globalpay.com/resources/test-cards)
+
+## Project Structure
+
+```
+portico-online-recurring-payments/
+├── index.html              # Shared frontend (hosted fields form + customer info)
+├── docker-compose.yml      # Multi-service config (all 4 languages)
+├── README.md               # This file
+├── LICENSE
+├── php/                    # PHP implementation (Docker: 8003)
+│   ├── config.php          # GET /config endpoint
+│   ├── process-payment.php # POST /process-payment endpoint
+│   ├── composer.json
+│   ├── .env.sample
+│   ├── Dockerfile
+│   ├── run.sh
+│   ├── .devcontainer/
+│   ├── .codesandbox/
+│   └── README.md
+├── nodejs/                 # Node.js implementation (Docker: 8001)
+│   ├── server.js           # Express server with both endpoints
+│   ├── package.json
+│   ├── .env.sample
+│   ├── Dockerfile
+│   ├── run.sh
+│   ├── .devcontainer/
+│   ├── .codesandbox/
+│   └── README.md
+├── dotnet/                 # .NET implementation (Docker: 8006)
+│   ├── Program.cs          # ASP.NET Core minimal API
+│   ├── dotnet.csproj
+│   ├── .env.sample
+│   ├── Dockerfile
+│   ├── run.sh
+│   ├── .devcontainer/
+│   ├── .codesandbox/
+│   └── README.md
+└── java/                   # Java implementation (Docker: 8004)
+    ├── src/
+    ├── pom.xml
+    ├── .env.sample
+    ├── Dockerfile
+    ├── run.sh
+    ├── .devcontainer/
+    ├── .codesandbox/
+    └── README.md
+```
+
+## Troubleshooting
+
+**Schedule creation fails with "Invalid customer"**
+The customer creation step must complete before the payment method or schedule can be created. Verify all required customer fields (`first_name`, `last_name`, `email`, `phone`, and full billing address) are present and non-empty in the request.
+
+**"Authentication failed" or 401 error**
+Your `SECRET_API_KEY` in `.env` is missing or incorrect. Confirm the key starts with `skapi_cert_` for the certification environment. Check for trailing whitespace or newline characters in the `.env` file.
+
+**Heartland.js tokenization not working**
+The `PUBLIC_API_KEY` returned from `GET /config` is used to initialize Heartland.js. If the key is wrong or the `/config` endpoint returns an error, the hosted fields won't load. Open browser DevTools → Console to see the specific Heartland.js error.
+
+**Port already in use**
+Each language runs on a different Docker port. If running locally (not Docker), only one service can use a given port at a time. Stop other processes on port 8000 or specify an alternate port in your run command.
+
+**Composer install fails (PHP)**
+Requires PHP 8.0+ and Composer 2.x. Run `php -v` and `composer --version` to confirm. If the `ext-curl` or `ext-json` extensions are missing, install them via your system package manager.
+
+**Maven build fails (Java)**
+Requires Java 17+ and Maven 3.8+. Run `java -version` and `mvn -v` to confirm. If the build fails on dependency resolution, check your network connection and try `mvn clean package -U` to force dependency updates.
+
+## Per-Language Documentation
+
+Each implementation has its own detailed README:
+
+- [PHP README](./php/README.md)
+- [Node.js README](./nodejs/README.md)
+- [.NET README](./dotnet/README.md)
+- [Java README](./java/README.md)
+
+## External Resources
+
+- [Global Payments Developer Portal](https://developer.globalpay.com/)
+- [Portico API Reference](https://developer.globalpay.com/api/hosted-fields)
+- [Hosted Fields / Heartland.js Guide](https://developer.globalpay.com/docs/payments/online/hosted-fields)
+- [Test Cards](https://developer.globalpay.com/resources/test-cards)
+
+## License
+
+[MIT](./LICENSE)

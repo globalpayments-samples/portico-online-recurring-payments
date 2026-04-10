@@ -290,7 +290,7 @@ ServicesContainer.configure(config);
 | `PUBLIC_API_KEY` | Public key for Heartland.js client-side tokenization | `pkapi_cert_jKc1FtuyAydZhZfbB3` |
 | `SECRET_API_KEY` | Secret key for server-side Portico API calls | `skapi_cert_MTyMAQBiHVEAe...` |
 
-Obtain credentials from your [Global Payments developer account](https://developer.globalpay.com/).
+Obtain credentials from your [Global Payments developer account](https://developer.globalpayments.com/).
 
 ## Test Cards
 
@@ -303,7 +303,7 @@ Use these card numbers in the Portico certification environment:
 | Discover | 6011000990156527 | 123 | Any future date |
 | Amex | 372700699251018 | 1234 | Any future date |
 
-Additional test cards: [developer.globalpay.com/resources/test-cards](https://developer.globalpay.com/resources/test-cards)
+Additional test cards: [developer.globalpayments.com/resources/test-cards](https://developer.globalpayments.com/resources/test-cards)
 
 ## Project Structure
 
@@ -383,10 +383,10 @@ Each implementation has its own detailed README:
 
 ## External Resources
 
-- [Global Payments Developer Portal](https://developer.globalpay.com/)
-- [Portico API Reference](https://developer.globalpay.com/api/hosted-fields)
-- [Hosted Fields / Heartland.js Guide](https://developer.globalpay.com/docs/payments/online/hosted-fields)
-- [Test Cards](https://developer.globalpay.com/resources/test-cards)
+- [Global Payments Developer Portal](https://developer.globalpayments.com/)
+- [Portico API Reference](https://developer.globalpayments.com/api/references-overview)
+- [Hosted Fields / Heartland.js Guide](https://developer.globalpayments.com/docs/payments/online/drop-in-ui-guide)
+- [Test Cards](https://developer.globalpayments.com/resources/test-cards)
 
 ## License
 

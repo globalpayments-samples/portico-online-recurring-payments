@@ -20,7 +20,7 @@ Browser                     Backend                        Portico API
    │<─ { publicApiKey } ────────│                               │
    │                            │                               │
    │  [User fills form]         │                               │
-   │  [Heartland.js tokenizes]  │                               │
+   │  [globalpayments.js tokenizes]  │                               │
    │                            │                               │
    │── POST /process-payment ──>│                               │
    │   payment_token            │── Customer.create() ─────────>│
@@ -145,7 +145,7 @@ docker-compose up java
 
 ### GET /config
 
-Returns the public API key for Heartland.js tokenization.
+Returns the public API key for globalpayments.js tokenization.
 
 **Response:**
 ```json
@@ -183,7 +183,7 @@ Creates a customer record, stores a tokenized payment method, and sets up a recu
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `payment_token` | string | ✅ | Tokenized card from Heartland.js |
+| `payment_token` | string | ✅ | Tokenized card from globalpayments.js |
 | `first_name` | string | ✅ | Customer first name |
 | `last_name` | string | ✅ | Customer last name |
 | `email` | string | ✅ | Customer email address |
@@ -287,7 +287,7 @@ ServicesContainer.configure(config);
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `PUBLIC_API_KEY` | Public key for Heartland.js client-side tokenization | `pkapi_cert_jKc1FtuyAydZhZfbB3` |
+| `PUBLIC_API_KEY` | Public key for globalpayments.js client-side tokenization | `pkapi_cert_jKc1FtuyAydZhZfbB3` |
 | `SECRET_API_KEY` | Secret key for server-side Portico API calls | `skapi_cert_MTyMAQBiHVEAe...` |
 
 Obtain credentials from your [Global Payments developer account](https://developer.globalpayments.com/).
@@ -360,8 +360,8 @@ The customer creation step must complete before the payment method or schedule c
 **"Authentication failed" or 401 error**
 Your `SECRET_API_KEY` in `.env` is missing or incorrect. Confirm the key starts with `skapi_cert_` for the certification environment. Check for trailing whitespace or newline characters in the `.env` file.
 
-**Heartland.js tokenization not working**
-The `PUBLIC_API_KEY` returned from `GET /config` is used to initialize Heartland.js. If the key is wrong or the `/config` endpoint returns an error, the hosted fields won't load. Open browser DevTools → Console to see the specific Heartland.js error.
+**globalpayments.js tokenization not working**
+The `PUBLIC_API_KEY` returned from `GET /config` is used to initialize globalpayments.js. If the key is wrong or the `/config` endpoint returns an error, the hosted fields won't load. Open browser DevTools → Console to see the specific globalpayments.js error.
 
 **Port already in use**
 Each language runs on a different Docker port. If running locally (not Docker), only one service can use a given port at a time. Stop other processes on port 8000 or specify an alternate port in your run command.
@@ -385,7 +385,7 @@ Each implementation has its own detailed README:
 
 - [Global Payments Developer Portal](https://developer.globalpayments.com/)
 - [Portico API Reference](https://developer.globalpayments.com/api/references-overview)
-- [Hosted Fields / Heartland.js Guide](https://developer.globalpayments.com/docs/payments/online/drop-in-ui-guide)
+- [Hosted Fields / globalpayments.js Guide](https://developer.globalpayments.com/docs/payments/online/drop-in-ui-guide)
 - [Test Cards](https://developer.globalpayments.com/resources/test-cards)
 
 ## License

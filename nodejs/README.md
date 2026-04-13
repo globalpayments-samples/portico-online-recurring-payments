@@ -224,7 +224,7 @@ docker-compose up nodejs
 ## Troubleshooting
 
 **Hosted Fields not loading**
-Verify `GET /config` returns a 200 with a valid `publicApiKey`. Check the browser console for Heartland.js initialization errors. Ensure `PUBLIC_API_KEY` is set in `.env` and the server was restarted after editing it.
+Verify `GET /config` returns a 200 with a valid `publicApiKey`. Check the browser console for globalpayments.js initialization errors. Ensure `PUBLIC_API_KEY` is set in `.env` and the server was restarted after editing it.
 
 **"Missing required field: X" (400)**
 All 11 fields are required — `payment_token`, `first_name`, `last_name`, `email`, `phone`, `street_address`, `city`, `state`, `billing_zip`, `country`, `amount`. Confirm all fields are included as non-empty strings.

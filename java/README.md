@@ -1,121 +1,257 @@
-# Java Recurring Payment Example
+# Java — Portico Online Recurring Payments
 
-This example demonstrates recurring payment setup using Jakarta EE and the Global Payments SDK.
+Jakarta EE/Servlet implementation of a recurring payment setup using the Global Payments Portico gateway. Uses Heartland Hosted Fields for PCI SAQ-A compliant card tokenization — card data never touches your server.
 
 ## Requirements
 
-- Java 11 or later
-- Maven
-- Global Payments account and API credentials
+- Java 17+
+- Maven 3.8+
+- Global Payments Portico account with API credentials
 
 ## Project Structure
 
-- `src/main/java/com/globalpayments/example/ProcessPaymentServlet.java` - Main servlet handling recurring payment processing
-- `src/main/webapp/index.html` - Client-side payment form with customer information collection
-- `src/main/webapp/WEB-INF/web.xml` - Web application configuration
-- `.env.sample` - Template for environment variables
-- `pom.xml` - Project dependencies and build configuration
-- `run.sh` - Convenience script to run the application
+```
+java/
+├── src/
+│   └── main/
+│       ├── java/com/globalpayments/example/
+│       │   └── ProcessPaymentServlet.java  # Handles GET /config and POST /process-payment
+│       └── webapp/
+│           ├── index.html                  # Recurring payment form frontend
+│           └── WEB-INF/web.xml             # Servlet configuration
+├── pom.xml         # com.globalpayments:java-sdk dependency
+├── .env.sample
+├── Dockerfile
+├── run.sh
+├── .devcontainer/
+└── .codesandbox/
+```
 
 ## Setup
 
-1. Clone this repository
-2. Copy `.env.sample` to `.env`
-3. Update `.env` with your Global Payments credentials:
-   ```
-   PUBLIC_API_KEY=pk_test_xxx
-   SECRET_API_KEY=sk_test_xxx
-   ```
-4. Install dependencies:
-   ```bash
-   mvn clean install
-   ```
-5. Run the application:
-   ```bash
-   ./run.sh
-   ```
-   Or manually:
-   ```bash
-   mvn jetty:run
-   ```
+**1. Build the project**
+```bash
+mvn clean package
+```
 
-## Implementation Details
+**2. Configure credentials**
+```bash
+cp .env.sample .env
+```
 
-### Servlet Configuration
-The application uses Jakarta EE servlets to:
-- Handle recurring payment setup requests
-- Serve configuration data for client-side tokenization
-- Process customer and payment information forms
+Edit `.env`:
+```env
+PUBLIC_API_KEY=pkapi_cert_jKc1FtuyAydZhZfbB3
+SECRET_API_KEY=skapi_cert_MTyMAQBiHVEAewvIzXVFcmUd2UcyBge_eCpaASUp0A
+```
 
-### SDK Configuration
-Global Payments SDK configuration is handled in the servlet's init method:
-- Loads credentials from .env file
-- Sets up service URL for API communication
-- Configures developer identification
+**3. Start the server**
+```bash
+mvn cargo:run
+# Open http://localhost:8080
+```
 
-### Recurring Payment Setup
-Recurring payment setup flow:
-1. Client submits payment token and complete customer information
-2. Server creates Customer record with billing details
-3. Creates CreditCardData with tokenized payment information
-4. Adds payment method to customer account
-5. Creates recurring payment schedule with specified frequency and duration
-6. Returns success response with schedule key
+Or use the convenience script:
+```bash
+./run.sh
+```
 
-### Error Handling
-Implements comprehensive error handling:
-- Catches and processes API exceptions
-- Returns appropriate HTTP status codes
-- Provides meaningful error messages
+## Environment Variables
+
+| Variable | Description | Required | Example |
+|----------|-------------|----------|---------|
+| `PUBLIC_API_KEY` | Public key for Heartland Hosted Fields (browser) | yes | `pkapi_cert_jKc1FtuyAydZhZfbB3` |
+| `SECRET_API_KEY` | Secret key for server-side Portico API calls | yes | `skapi_cert_MTyMAQBiHVEA...` |
+
+Export credentials before running:
+```bash
+export SECRET_API_KEY=skapi_cert_...
+export PUBLIC_API_KEY=pkapi_cert_...
+mvn cargo:run
+```
+
+## SDK Configuration
+
+Configured at servlet initialization:
+
+```java
+import com.global.api.ServicesContainer;
+import com.global.api.serviceConfigs.PorticoConfig;
+
+PorticoConfig config = new PorticoConfig();
+config.setSecretApiKey(System.getenv("SECRET_API_KEY"));
+config.setDeveloperId("000000");
+config.setVersionNumber("0000");
+config.setServiceUrl("https://cert.api2.heartlandportico.com");
+
+ServicesContainer.configureService(config);
+```
 
 ## API Endpoints
 
-### GET /public-key
-Returns public API key for client-side SDK initialization.
+### GET /config
 
-Response:
+Returns the public API key for Heartland Hosted Fields initialization.
+
+**Response:**
 ```json
 {
-    "publicApiKey": "pk_test_xxx"
+  "success": true,
+  "data": {
+    "publicApiKey": "pkapi_cert_jKc1FtuyAydZhZfbB3"
+  }
 }
 ```
 
+---
+
 ### POST /process-payment
-Creates a recurring payment schedule using customer information and tokenized payment method.
 
-Request Parameters:
-- `payment_token` (string, required) - Token from client-side SDK
-- `first_name` (string, required) - Customer's first name
-- `last_name` (string, required) - Customer's last name
-- `email` (string, required) - Customer's email address
-- `phone` (string, required) - Customer's phone number
-- `street_address` (string, required) - Customer's street address
-- `city` (string, required) - Customer's city
-- `state` (string, required) - Customer's state/province
-- `billing_zip` (string, required) - Billing postal code
-- `country` (string, required) - Customer's country
-- `amount` (string, required) - Recurring payment amount
+Creates a Customer, attaches a tokenized payment method, and creates a recurring schedule.
 
-Response (Success):
+**Request fields:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `payment_token` | string | yes | Token from Heartland Hosted Fields |
+| `first_name` | string | yes | Customer first name |
+| `last_name` | string | yes | Customer last name |
+| `email` | string | yes | Customer email address |
+| `phone` | string | yes | Customer phone number |
+| `street_address` | string | yes | Billing street address |
+| `city` | string | yes | Billing city |
+| `state` | string | yes | Billing state/province |
+| `billing_zip` | string | yes | Billing postal code |
+| `country` | string | yes | Billing country |
+| `amount` | string | yes | Recurring payment amount |
+
+**Example request:**
+```json
+{
+  "payment_token": "supt_xxxxxxxxxxxxxx",
+  "first_name": "Jane",
+  "last_name": "Doe",
+  "email": "jane@example.com",
+  "phone": "555-555-5555",
+  "street_address": "123 Main St",
+  "city": "Anytown",
+  "state": "GA",
+  "billing_zip": "12345",
+  "country": "US",
+  "amount": "25.00"
+}
 ```
-Schedule created successfully! Schedule Key: xxx
+
+**Success response (200):**
+```json
+{
+  "success": true,
+  "message": "Schedule created successfully! Schedule Key: <scheduleKey>",
+  "data": {
+    "scheduleKey": "<scheduleKey>"
+  }
+}
 ```
 
-Response (Error):
-```
-Error: [error message]
+**Error response (400):**
+```json
+{
+  "success": false,
+  "message": "Recurring payment schedule setup failed",
+  "error": {
+    "code": "API_ERROR",
+    "details": "Error message details"
+  }
+}
 ```
 
-## Security Considerations
+## Recurring Payment Flow
 
-This example demonstrates basic recurring payment implementation. For production use, consider:
-- Implementing additional input validation for customer data
-- Adding request rate limiting to prevent abuse
-- Including security headers for web security
-- Implementing proper logging and monitoring for recurring payments
-- Adding payment fraud prevention measures
-- Using HTTPS in production for secure data transmission
-- Configuring secure session management
-- Implementing customer authentication for schedule management
-- Adding webhook endpoints for payment failure notifications
-- Securing stored payment method tokens with proper encryption
+```java
+// Step 1 — Create customer
+Customer customer = new Customer();
+customer.setId(UUID.randomUUID().toString());
+customer.setFirstName(firstName);
+customer.setLastName(lastName);
+customer.setStatus("Active");
+customer.setEmail(email);
+customer.setWorkPhone(phone);
+
+Address address = new Address();
+address.setStreetAddress1(streetAddress);
+address.setCity(city);
+address.setProvince(state);
+address.setPostalCode(sanitizePostalCode(billingZip));
+address.setCountry(country);
+customer.setAddress(address);
+
+Customer savedCustomer = customer.create();
+
+// Step 2 — Store payment method
+CreditCardData card = new CreditCardData();
+card.setToken(paymentToken);
+RecurringPaymentMethod savedMethod = savedCustomer
+    .addPaymentMethod(UUID.randomUUID().toString(), card)
+    .create();
+
+// Step 3 — Create schedule
+Schedule savedSchedule = savedMethod.addSchedule(UUID.randomUUID().toString())
+    .withStatus("Active")
+    .withAmount(new BigDecimal(amount))
+    .withCurrency("USD")
+    .withStartDate(Date.from(LocalDate.of(2027, 2, 1).atStartOfDay(ZoneId.systemDefault()).toInstant()))
+    .withFrequency(ScheduleFrequency.Weekly)
+    .withEndDate(Date.from(LocalDate.of(2027, 4, 1).atStartOfDay(ZoneId.systemDefault()).toInstant()))
+    .withReprocessingCount(2)
+    .create();
+```
+
+## Test Cards
+
+| Brand | Card Number | CVV | Expiry |
+|-------|-------------|-----|--------|
+| Visa | 4012002000060016 | 123 | Any future date |
+| Mastercard | 5473500000000014 | 123 | Any future date |
+| Discover | 6011000990156527 | 123 | Any future date |
+| Amex | 372700699251018 | 1234 | Any future date |
+
+## Docker
+
+```bash
+docker build -t portico-recurring-java .
+docker run -p 8004:8000 \
+  -e PUBLIC_API_KEY=your_key \
+  -e SECRET_API_KEY=your_key \
+  portico-recurring-java
+# Open http://localhost:8004
+```
+
+Or via docker-compose from the project root:
+```bash
+docker-compose up java
+```
+
+## Troubleshooting
+
+**Hosted Fields not loading**
+Verify `GET /config` returns a 200 with a valid `publicApiKey`. If the servlet fails at startup, check that `PUBLIC_API_KEY` and `SECRET_API_KEY` are exported as shell environment variables before running `mvn cargo:run`.
+
+**"Missing required fields" (400)**
+All 11 fields are required. Confirm the JSON body includes `payment_token`, `first_name`, `last_name`, `email`, `phone`, `street_address`, `city`, `state`, `billing_zip`, `country`, and `amount`.
+
+**"Recurring payment schedule setup failed" — Portico error**
+Confirm `SECRET_API_KEY` starts with `skapi_cert_`. Environment variables must be exported in the shell before running `mvn cargo:run`:
+```bash
+export SECRET_API_KEY=skapi_cert_...
+export PUBLIC_API_KEY=pkapi_cert_...
+mvn cargo:run
+```
+
+**Maven build fails**
+Requires Java 17+ and Maven 3.8+. Confirm with `java -version` and `mvn -v`. If the `com.globalpayments:java-sdk` dependency fails to resolve, run `mvn clean package -U` to force a fresh dependency download.
+
+**Port conflict on 8080**
+The Java implementation defaults to port 8080. If 8080 is occupied, update the `cargo` plugin port in `pom.xml` or stop the conflicting process with `lsof -i :8080`.
+
+**Schedule created but no immediate charge**
+Schedule creation does not immediately charge the customer. The first charge occurs on `start_date` (hardcoded in this example). Ensure `withStartDate` uses a future date when testing against the cert environment.

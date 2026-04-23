@@ -387,6 +387,14 @@ Each implementation has its own detailed README:
 - [.NET README](./dotnet/README.md)
 - [Java README](./java/README.md)
 
+## Security Considerations
+
+- Store credentials in `.env` files, never commit to source control
+- API keys never exposed to the frontend
+- All payment processing happens server-side
+- Use HTTPS in production
+- Stored credentials must comply with card network rules for recurring billing
+
 ## External Resources
 
 - [Global Payments Developer Portal](https://developer.globalpayments.com/)

@@ -56,7 +56,7 @@ Browser                     Backend                        Portico API
 
 - Global Payments Portico developer account
 - Portico API credentials (`PUBLIC_API_KEY` and `SECRET_API_KEY`)
-- Docker, or runtime for your chosen language (PHP 8.0+, Node.js 18+, .NET 8+, Java 17+)
+- Docker, or runtime for your chosen language (PHP 8.2.35+/8.3.36+/8.4.27+/8.5.12+, Node.js 18+, .NET 8+, Java 17+)
 
 ## Quick Start
 
@@ -85,10 +85,9 @@ SECRET_API_KEY=skapi_cert_your_key_here
 
 **PHP:**
 ```bash
-composer install
-php -S localhost:8000
-# Open http://localhost:8000
+./run.sh
 ```
+Open the local URL printed by the PHP server.
 
 **Node.js:**
 ```bash
@@ -373,7 +372,7 @@ The `PUBLIC_API_KEY` returned from `GET /config` is used to initialize globalpay
 Each language runs on a different Docker port. If running locally (not Docker), only one service can use a given port at a time. Stop other processes on port 8000 or specify an alternate port in your run command.
 
 **Composer install fails (PHP)**
-Requires PHP 8.0+ and Composer 2.x. Run `php -v` and `composer --version` to confirm. If the `ext-curl` or `ext-json` extensions are missing, install them via your system package manager.
+Requires PHP 8.2.35+, 8.3.36+, 8.4.27+, or 8.5.12+ and Composer 2.x. Run `php -v` and `composer --version` to confirm. If the `ext-curl` or `ext-json` extensions are missing, install them via your system package manager.
 
 **Maven build fails (Java)**
 Requires Java 17+ and Maven 3.8+. Run `java -version` and `mvn -v` to confirm. If the build fails on dependency resolution, check your network connection and try `mvn clean package -U` to force dependency updates.

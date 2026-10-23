@@ -4,7 +4,7 @@ PHP implementation of a recurring payment setup using the Global Payments Portic
 
 ## Requirements
 
-- PHP 8.0+
+- PHP 8.2.35+, 8.3.36+, 8.4.27+, or 8.5.12+ for the web server
 - Composer
 - Global Payments Portico account with API credentials
 
@@ -43,7 +43,7 @@ SECRET_API_KEY=skapi_cert_MTyMAQBiHVEAewvIzXVFcmUd2UcyBge_eCpaASUp0A
 
 **3. Start the server**
 ```bash
-php -S localhost:8000
+./run.sh
 # Open http://localhost:8000
 ```
 
@@ -212,7 +212,7 @@ docker-compose up php
 ## Troubleshooting
 
 **Hosted Fields not loading**
-Verify `GET /config.php` returns a 200 with a valid `publicApiKey`. If it errors, confirm `.env` exists and `composer install` completed. Restart `php -S` after editing `.env`.
+Verify `GET /config.php` returns a 200 with a valid `publicApiKey`. If it errors, confirm `.env` exists and `composer install` completed. Restart `./run.sh` after editing `.env`.
 
 **"Missing required field: X" (400)**
 All 11 fields are required — `payment_token`, `first_name`, `last_name`, `email`, `phone`, `street_address`, `city`, `state`, `billing_zip`, `country`, `amount`. Verify the form is sending all fields in the POST body.
@@ -224,7 +224,7 @@ Confirm `SECRET_API_KEY` starts with `skapi_cert_`. The cert service URL (`cert.
 Schedule creation does not immediately charge the customer. The first charge occurs on `start_date` (hardcoded to `2027-02-01` in this example). Use this date in the future when testing.
 
 **`composer install` fails**
-Requires PHP 8.0+ and Composer 2.x. Confirm with `php -v` and `composer --version`. Missing `ext-curl` or `ext-json` will cause install failures — install via your OS package manager (e.g., `apt install php-curl php-json`).
+Requires a patched PHP release (8.2.35+, 8.3.36+, 8.4.27+, or 8.5.12+) and Composer 2.x. Confirm with `php -v` and `composer --version`. Missing `ext-curl` or `ext-json` will cause install failures — install via your OS package manager (e.g., `apt install php-curl php-json`).
 
 **"Invalid amount" (400)**
 `amount` must be a positive numeric value. Empty string or zero will fail validation before reaching the Portico API.

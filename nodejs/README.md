@@ -4,7 +4,7 @@ Node.js/Express implementation of a recurring payment setup using the Global Pay
 
 ## Requirements
 
-- Node.js 18+
+- Node.js 24+
 - npm
 - Global Payments Portico account with API credentials
 
@@ -233,7 +233,7 @@ All 11 fields are required — `payment_token`, `first_name`, `last_name`, `emai
 Confirm `SECRET_API_KEY` in `.env` starts with `skapi_cert_`. `process.env.SECRET_API_KEY` is read directly — trim any trailing whitespace before setting the value. Check the server console for the full Portico error.
 
 **`import` syntax error on startup**
-The project uses ES module syntax. Confirm `"type": "module"` is in `package.json` and you are running Node.js 18+. Check with `node --version`.
+The project uses ES module syntax. Confirm `"type": "module"` is in `package.json` and you are running Node.js 24+. Check with `node --version`.
 
 **Schedule created but no immediate charge**
 Schedule creation does not immediately charge the customer. The first charge occurs on `start_date` (hardcoded to `2027-02-01` in this example). Ensure this date is in the future when testing.

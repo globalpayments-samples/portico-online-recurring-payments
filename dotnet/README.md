@@ -4,7 +4,7 @@ ASP.NET Core implementation of a recurring payment setup using the Global Paymen
 
 ## Requirements
 
-- .NET 9.0+
+- .NET 10.0+
 - Global Payments Portico account with API credentials
 
 ## Project Structure
@@ -240,7 +240,7 @@ Confirm `SECRET_API_KEY` starts with `skapi_cert_`. Check the server console for
 The frontend is served from `wwwroot/`. Ensure `app.UseStaticFiles()` and `app.UseDefaultFiles()` are both present in `Program.cs` and that `wwwroot/index.html` exists.
 
 **`dotnet run` fails to resolve packages**
-Requires .NET 9.0+. Confirm with `dotnet --version`. Run `dotnet restore` to pull fresh packages. If `GlobalPayments.Api` fails to resolve, clear the NuGet cache: `dotnet nuget locals all --clear`.
+Requires .NET 10.0+. Confirm with `dotnet --version`. Run `dotnet restore` to pull fresh packages. If `GlobalPayments.Api` fails to resolve, clear the NuGet cache: `dotnet nuget locals all --clear`.
 
 **Schedule created but no immediate charge**
 Schedule creation does not immediately charge the customer. The first charge occurs on `start_date` (hardcoded in this example). Ensure `WithStartDate` uses a future date when testing against the cert environment.

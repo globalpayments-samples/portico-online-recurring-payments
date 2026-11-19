@@ -29,7 +29,7 @@
 
 ### .NET (ASP.NET Core minimal API + Global Payments SDK)
 - [`dotnet/Program.cs`](dotnet/Program.cs) — `ConfigureGlobalPaymentsSDK()` sets up `PorticoConfig`; `ConfigureEndpoints()` maps `GET /config` and delegates to `ConfigurePaymentEndpoint()`; `ConfigurePaymentEndpoint()` maps `POST /process-payment`; port read from `PORT` env var, defaults to `"8000"`
-- [`dotnet/dotnet.csproj`](dotnet/dotnet.csproj) — `GlobalPayments.Api` 9.0.16, net9.0
+- [`dotnet/dotnet.csproj`](dotnet/dotnet.csproj) — `GlobalPayments.Api` 9.0.16, net10.0
 
 ### Shared
 - [`index.html`](index.html) — root copy of the frontend form (each language dir also has its own copy)

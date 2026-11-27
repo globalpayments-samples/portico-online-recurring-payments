@@ -136,6 +136,17 @@ public class Program
         app.MapPost("/process-payment", async (HttpContext context) =>
         {
             // Parse form data from the request
+            if (!context.Request.HasFormContentType)
+            {
+                return Results.BadRequest(new {
+                    success = false,
+                    message = "Recurring payment schedule setup failed",
+                    error = new {
+                        code = "VALIDATION_ERROR",
+                        details = "Missing required field: payment_token"
+                    }
+                });
+            }
             var form = await context.Request.ReadFormAsync();
             var token = form["payment_token"].ToString();
             var firstName = form["first_name"].ToString();

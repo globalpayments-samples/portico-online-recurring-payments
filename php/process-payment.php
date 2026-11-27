@@ -30,6 +30,7 @@ use GlobalPayments\Api\ServiceConfigs\Gateways\PorticoConfig;
 use GlobalPayments\Api\ServicesContainer;
 
 ini_set('display_errors', '0');
+header('Content-Type: application/json');
 
 /**
  * Configure the SDK

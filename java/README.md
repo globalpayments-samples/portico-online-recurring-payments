@@ -48,7 +48,7 @@ SECRET_API_KEY=skapi_cert_MTyMAQBiHVEAewvIzXVFcmUd2UcyBge_eCpaASUp0A
 **3. Start the server**
 ```bash
 mvn cargo:run
-# Open http://localhost:8080
+# Open http://localhost:8000
 ```
 
 Or use the convenience script:
@@ -250,8 +250,8 @@ mvn cargo:run
 **Maven build fails**
 Requires Java 21+ and Maven 3.8+. Confirm with `java -version` and `mvn -v`. If the `com.globalpayments:java-sdk` dependency fails to resolve, run `mvn clean package -U` to force a fresh dependency download.
 
-**Port conflict on 8080**
-The Java implementation defaults to port 8080. If 8080 is occupied, update the `cargo` plugin port in `pom.xml` or stop the conflicting process with `lsof -i :8080`.
+**Port conflict on 8000**
+The Java implementation runs on port 8000 (set in the `cargo` plugin in `pom.xml`). If 8000 is occupied, update the `cargo` plugin port in `pom.xml` or stop the conflicting process with `lsof -i :8000`.
 
 **Schedule created but no immediate charge**
 Schedule creation does not immediately charge the customer. The first charge occurs on `start_date` (hardcoded in this example). Ensure `withStartDate` uses a future date when testing against the cert environment.

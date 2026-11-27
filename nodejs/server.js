@@ -122,14 +122,14 @@ app.post('/process-payment', async (req, res) => {
         
         for (const field of requiredFields) {
             if (!req.body[field] || !req.body[field].toString().trim()) {
-                throw new Error(`Missing required field: ${field}`);
+                throw new ApiError(`Missing required field: ${field}`);
             }
         }
 
         // Parse and validate amount
         const amount = parseFloat(req.body.amount);
         if (isNaN(amount) || amount <= 0) {
-            throw new Error('Invalid amount');
+            throw new ApiError('Invalid amount');
         }
 
         // Create customer record with form data
@@ -182,30 +182,28 @@ app.post('/process-payment', async (req, res) => {
     } catch (error) {
         // Handle different types of errors appropriately
         console.error(error);
-        switch (error.name) {
-            case ApiError.constructor.name:
-                // Handle API-specific errors
-                res.status(400).json({
-                    success: false,
-                    message: 'Recurring payment schedule setup failed',
-                    error: {
-                        code: 'API_ERROR',
-                        details: error.message
-                    }
-                });
-                break;
-            default:
-                // Handle general errors
-                res.status(500).json({
-                    success: false,
-                    message: 'Internal server error',
-                    error: {
-                        code: 'SERVER_ERROR',
-                        details: error.message
-                    }
-                });
-                break;
+        if (error instanceof ApiError) {
+            // Validation and gateway errors
+            res.status(400).json({
+                success: false,
+                message: 'Recurring payment schedule setup failed',
+                error: {
+                    code: 'API_ERROR',
+                    details: error.message
+                }
+            });
+            return;
         }
+
+        // Handle general errors
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: {
+                code: 'SERVER_ERROR',
+                details: error.message
+            }
+        });
     }
 });
 
